@@ -7,26 +7,44 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [category, setCategory] = useState("");
+
+  // ✅ Environment variable for API key
   const apiKey = process.env.REACT_APP_GNEWS_API_KEY;
 
   const categories = ["General", "Technology", "Sports", "Business", "Health", "Entertainment"];
 
   const fetchNews = async (searchQuery = "latest") => {
+    if (!apiKey) {
+      console.error("❌ Missing GNews API key. Please set REACT_APP_GNEWS_API_KEY in .env or Vercel.");
+      setError("API key is missing. Please check configuration.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-    try {
-      const response = await fetch(
-        `https://gnews.io/api/v4/search?q=${searchQuery}${
-          category ? `&topic=${category.toLowerCase()}` : ""
-        }&lang=en&max=12&apikey=${apiKey}`
-      );
 
-      if (!response.ok) throw new Error("Failed to fetch news");
+    try {
+      const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(
+        searchQuery
+      )}${category ? `&topic=${category.toLowerCase()}` : ""}&lang=en&max=12&apikey=${apiKey}`;
+
+      console.log("🔍 Fetching news from:", url);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ API Error:", response.status, errorText);
+        throw new Error(`Failed to fetch news: ${response.status}`);
+      }
 
       const data = await response.json();
+      console.log("✅ API Response:", data);
+
       setArticles(data.articles || []);
     } catch (err) {
-      setError("Failed to fetch news");
+      console.error("⚠️ Fetch error:", err);
+      setError("Failed to fetch news. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +70,7 @@ const App = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {/* Search Bar */}
+        {/* 🔍 Search Bar */}
         <form onSubmit={handleSearch} className="flex justify-center mb-6">
           <input
             type="text"
@@ -69,7 +87,7 @@ const App = () => {
           </button>
         </form>
 
-        {/* Category Filters */}
+        {/* 🧭 Category Filters */}
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {categories.map((cat) => (
             <button
@@ -94,11 +112,11 @@ const App = () => {
           )}
         </div>
 
-        {/* Loading, Error, or Articles */}
+        {/* 📊 Loading, Error, or Articles */}
         {loading && <p className="text-center text-gray-500">Loading...</p>}
         {error && <p className="text-center text-red-500">{error}</p>}
 
-        {/* News Cards */}
+        {/* 📰 News Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {!loading && !error && articles.length > 0 ? (
             articles.map((article, index) => (
