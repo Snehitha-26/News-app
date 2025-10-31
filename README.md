@@ -23,7 +23,6 @@ Includes **search**, **category filters**, and a **dark/light theme toggle**.
 - **Frontend:** React.js (Functional Components + Hooks)
 - **Styling:** Tailwind CSS
 - **API:** [GNews API](https://gnews.io/)
-- **Deployment:** https://news-feed-rho-eight.vercel.app
 
 ---
 
