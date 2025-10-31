@@ -7,7 +7,7 @@ export default function ThemeToggle() {
   );
 
   useEffect(() => {
-    // Apply theme class to <html>
+
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
