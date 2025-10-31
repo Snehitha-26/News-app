@@ -8,7 +8,6 @@ const App = () => {
   const [error, setError] = useState("");
   const [category, setCategory] = useState("");
 
-  // ✅ Direct API key (replace YOUR_API_KEY with your actual key)
   const apiKey = "63d7ec112089bb2ad562fbf8fa77718d";
 
   const categories = ["General", "Technology", "Sports", "Business", "Health", "Entertainment"];
