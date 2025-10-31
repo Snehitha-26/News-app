@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Sun, Moon } from "lucide-react"; // ✅ icons from lucide-react
+import { Sun, Moon } from "lucide-react"; 
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(() =>
