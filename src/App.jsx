@@ -8,28 +8,23 @@ const App = () => {
   const [error, setError] = useState("");
   const [category, setCategory] = useState("");
 
-  const apiKey = "4ae0694e5791eb3086160cc6d8b9438f";
+  // ✅ Direct API key (replace YOUR_API_KEY with your actual key)
+  const apiKey = "63d7ec112089bb2ad562fbf8fa77718d";
 
   const categories = ["General", "Technology", "Sports", "Business", "Health", "Entertainment"];
-
 
   const fetchNews = async (searchQuery = "latest") => {
     setLoading(true);
     setError("");
-
     try {
       const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(
         searchQuery
       )}${category ? `&topic=${category.toLowerCase()}` : ""}&lang=en&max=12&apikey=${apiKey}`;
 
-      console.log("🔍 Fetching news from:", url);
-
       const response = await fetch(url);
 
       if (!response.ok) {
-        const err = await response.text();
-        console.error("❌ API Error:", err);
-        throw new Error("Failed to fetch news");
+        throw new Error(`Failed to fetch news: ${response.status}`);
       }
 
       const data = await response.json();
