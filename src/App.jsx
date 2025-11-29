@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ThemeToggle from "./components/ThemeToggle";
 
 const App = () => {
@@ -8,66 +8,54 @@ const App = () => {
   const [error, setError] = useState("");
   const [category, setCategory] = useState("");
 
-  // 🔑 Your GNews API Key
   const apiKey = "63d7ec112089bb2ad562fbf8fa77718d";
-
-  // 🏷 Available categories
   const categories = ["General", "Technology", "Sports", "Business", "Health", "Entertainment"];
-
-  // 🌐 CORS proxy for GitHub Pages
   const proxyUrl = "https://api.allorigins.win/get?url=";
 
-  // 🌟 Fetch news function
-  const fetchNews = async (searchQuery = "latest") => {
-    setLoading(true);
-    setError("");
+  // Wrap fetchNews in useCallback so it's stable
+  const fetchNews = useCallback(
+    async (searchQuery = "latest") => {
+      setLoading(true);
+      setError("");
 
-    try {
-      // Endpoint based on category or search
-      const endpoint = category
-        ? `https://gnews.io/api/v4/top-headlines?category=${category.toLowerCase()}&lang=en&max=12&apikey=${apiKey}`
-        : `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=12&apikey=${apiKey}`;
+      try {
+        const endpoint = category
+          ? `https://gnews.io/api/v4/top-headlines?category=${category.toLowerCase()}&lang=en&max=12&apikey=${apiKey}`
+          : `https://gnews.io/api/v4/search?q=${encodeURIComponent(searchQuery)}&lang=en&max=12&apikey=${apiKey}`;
 
-      // Use proxy only in production
-      const finalUrl =
-        window.location.hostname === "localhost"
-          ? endpoint
-          : `${proxyUrl}${encodeURIComponent(endpoint)}`;
+        const finalUrl =
+          window.location.hostname === "localhost"
+            ? endpoint
+            : `${proxyUrl}${encodeURIComponent(endpoint)}`;
 
-      console.log("🔗 Fetching:", finalUrl);
+        const response = await fetch(finalUrl);
+        if (!response.ok) throw new Error(`Failed to fetch news: ${response.status}`);
 
-      const response = await fetch(finalUrl);
-      if (!response.ok) throw new Error(`Failed to fetch news: ${response.status}`);
+        const data =
+          window.location.hostname === "localhost"
+            ? await response.json()
+            : JSON.parse((await response.json()).contents);
 
-      const data =
-        window.location.hostname === "localhost"
-          ? await response.json()
-          : JSON.parse((await response.json()).contents);
+        setArticles(data.articles || []);
+      } catch (err) {
+        setError("Failed to fetch news. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [category] // re-create ONLY when category changes
+  );
 
-      console.log("✅ News Data:", data);
-
-      setArticles(data.articles || []);
-    } catch (err) {
-      console.error("⚠ Fetch error:", err);
-      setError("Failed to fetch news. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🌟 Fetch latest news on initial render
+  // Run once on mount
   useEffect(() => {
     fetchNews("latest");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchNews]);
 
-  // 🌟 Fetch news on category change
+  // Run when category changes
   useEffect(() => {
     fetchNews(query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
+  }, [fetchNews, query]);
 
-  // 🌟 Handle search
   const handleSearch = (e) => {
     e.preventDefault();
     setCategory(""); // Clear category when searching
@@ -84,14 +72,15 @@ const App = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
-        {/* 🔍 Search Bar */}
+
+        {/* Search */}
         <form onSubmit={handleSearch} className="flex justify-center mb-6">
           <input
             type="text"
             placeholder="Search news..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-2/3 p-2 border rounded-l-lg focus:outline-none dark:bg-gray-700 dark:text-white"
+            className="w-2/3 p-2 border rounded-l-lg dark:bg-gray-700 dark:text-white"
           />
           <button
             type="submit"
@@ -101,7 +90,7 @@ const App = () => {
           </button>
         </form>
 
-        {/* 🧭 Category Filters */}
+        {/* Categories */}
         <div className="flex flex-wrap justify-center gap-2 mb-6">
           {categories.map((cat) => (
             <button
@@ -116,6 +105,7 @@ const App = () => {
               {cat}
             </button>
           ))}
+
           {category && (
             <button
               onClick={() => setCategory("")}
@@ -126,17 +116,17 @@ const App = () => {
           )}
         </div>
 
-        {/* 📊 Loading, Error, or Articles */}
+        {/* Loading + Error */}
         {loading && <p className="text-center text-gray-500">Loading...</p>}
         {error && <p className="text-center text-red-500">{error}</p>}
 
-        {/* 📰 News Cards */}
+        {/* Articles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {!loading && !error && articles.length > 0 ? (
             articles.map((article, index) => (
               <div
                 key={index}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition"
               >
                 {article.image && (
                   <img
@@ -146,7 +136,7 @@ const App = () => {
                   />
                 )}
                 <div className="p-4">
-                  <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100 mb-2">
+                  <h2 className="font-semibold text-lg dark:text-gray-100 mb-2">
                     {article.title}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">
@@ -166,9 +156,7 @@ const App = () => {
           ) : (
             !loading &&
             !error && (
-              <p className="text-center text-gray-500">
-                No articles found. Try another search.
-              </p>
+              <p className="text-center text-gray-500">No articles found.</p>
             )
           )}
         </div>
